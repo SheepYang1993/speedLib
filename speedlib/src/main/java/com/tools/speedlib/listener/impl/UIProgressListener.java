@@ -17,6 +17,7 @@ package com.tools.speedlib.listener.impl;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import com.tools.speedlib.listener.ProgressListener;
 import com.tools.speedlib.listener.impl.handler.ProgressHandler;
@@ -29,7 +30,7 @@ public abstract class UIProgressListener implements ProgressListener {
     private boolean isCancled = false;
 
     //主线程Handler
-    private Handler mHandler ;
+    private Handler mHandler;
 
     public UIProgressListener() {
         this.id = id;
@@ -47,29 +48,29 @@ public abstract class UIProgressListener implements ProgressListener {
 
         @Override
         public void start(UIProgressListener uiProgressListener, long currentBytes, long contentLength, boolean done) {
-            if (uiProgressListener!=null) {
+            if (uiProgressListener != null) {
                 uiProgressListener.onUIStart(id, currentBytes, contentLength, done);
             }
         }
 
         @Override
         public void progress(UIProgressListener uiProgressListener, long currentBytes, long contentLength, boolean done) {
-            if (uiProgressListener!=null){
+            if (uiProgressListener != null) {
                 uiProgressListener.onUIProgress(id, currentBytes, contentLength, done);
             }
         }
 
         @Override
         public void finish(UIProgressListener uiProgressListener, long currentBytes, long contentLength, boolean done) {
-            if (uiProgressListener!=null){
-                uiProgressListener.onUIFinish(id, currentBytes, contentLength,done);
+            if (uiProgressListener != null) {
+                uiProgressListener.onUIFinish(id, currentBytes, contentLength, done);
             }
         }
     }
 
     @Override
     public void onProgress(long bytesWrite, long contentLength, boolean done) {
-        if(isCancled()) {
+        if (isCancled()) {
             return;
         }
         //如果是第一次，发送消息
@@ -79,22 +80,25 @@ public abstract class UIProgressListener implements ProgressListener {
             Message start = Message.obtain();
             start.obj = new ProgressModel(bytesWrite, contentLength, done);
             start.what = ProgressHandler.START;
+            Log.i("SheepYang", "Progress START");
             mHandler.sendMessage(start);
         }
 
         //通过Handler发送进度消息
-        if(System.currentTimeMillis()-updateTime>=1000){
+        if (System.currentTimeMillis() - updateTime >= 1000) {
             updateTime = System.currentTimeMillis();
             Message message = Message.obtain();
             message.obj = new ProgressModel(bytesWrite, contentLength, done);
             message.what = ProgressHandler.UPDATE;
+            Log.i("SheepYang", "Progress UPDATE");
             mHandler.sendMessage(message);
         }
 
-        if(done) {
+        if (done) {
             Message finish = Message.obtain();
             finish.obj = new ProgressModel(bytesWrite, contentLength, done);
             finish.what = ProgressHandler.FINISH;
+            Log.i("SheepYang", "Progress FINISH");
             mHandler.sendMessage(finish);
         }
     }
@@ -112,7 +116,7 @@ public abstract class UIProgressListener implements ProgressListener {
     /**
      * UI层回调抽象方法
      *
-     * @param currentBytes    当前的字节长度
+     * @param currentBytes  当前的字节长度
      * @param contentLength 总字节长度
      * @param done          是否写入完成
      */
@@ -120,9 +124,10 @@ public abstract class UIProgressListener implements ProgressListener {
 
     /**
      * UI层开始请求回调方法
-     * @param currentBytes 当前的字节长度
+     *
+     * @param currentBytes  当前的字节长度
      * @param contentLength 总字节长度
-     * @param done 是否写入完成
+     * @param done          是否写入完成
      */
     public void onUIStart(int taskId, long currentBytes, long contentLength, boolean done) {
 
@@ -130,9 +135,10 @@ public abstract class UIProgressListener implements ProgressListener {
 
     /**
      * UI层结束请求回调方法
-     * @param currentBytes 当前的字节长度
+     *
+     * @param currentBytes  当前的字节长度
      * @param contentLength 总字节长度
-     * @param done 是否写入完成
+     * @param done          是否写入完成
      */
     public void onUIFinish(int taskId, long currentBytes, long contentLength, boolean done) {
 

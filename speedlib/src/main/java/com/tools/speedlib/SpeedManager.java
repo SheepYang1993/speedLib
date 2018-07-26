@@ -13,6 +13,8 @@ import com.tools.speedlib.listener.impl.UIProgressListener;
 import com.tools.speedlib.runnable.NetworkDelayRunnable;
 import com.tools.speedlib.utils.TimerTaskUtil;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +38,7 @@ public class SpeedManager {
     private String url; //网络测速的地址
     private int maxCount; //测速的时间总数
     private long timeOut; //超时时间
+    private File downFile;//下载文件地址
     private NetDelayListener delayListener; //网络延时回调
     private SpeedListener speedListener; //测速回调
 
@@ -51,8 +54,11 @@ public class SpeedManager {
             switch (msg.what) {
                 case MSG_TIMEOUT:
                     if (!mIsStopSpeed) {
+                        Log.i("SheepYang", "handleResultSpeed MSG_TIMEOUT");
                         handleResultSpeed(0L, true);
                     }
+                    break;
+                default:
                     break;
             }
         }
@@ -111,6 +117,7 @@ public class SpeedManager {
             @Override
             public void onUIFinish(int taskId, long currentBytes, long contentLength, boolean done) {
                 super.onUIFinish(taskId, currentBytes, contentLength, done);
+                Log.i("SheepYang", "handleResultSpeed onUIFinish");
                 handleResultSpeed(currentBytes, done);
             }
         };
@@ -122,13 +129,63 @@ public class SpeedManager {
         call.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                Log.i("SheepYang", "onFailure");
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                readBytesFromStream(response.body().byteStream());
+                Log.i("SheepYang", "onResponse");
+//                readBytesFromStream(response.body().byteStream());
+                download(call, response);
             }
         });
+    }
+
+    private void readBytesFromStream(InputStream is) throws IOException {
+        int len;
+        int size = 1024;
+        byte[] buf = new byte[size];
+        while (!mIsStopSpeed && (len = is.read(buf, 0, size)) != -1) {
+            Log.d("TAG", "byte length : " + len);
+        }
+    }
+
+    /**
+     * 获取下载数据并写入文件
+     *
+     * @param response
+     */
+    private void download(Call call, Response response) throws IOException {
+        InputStream is = response.body().byteStream();
+        if (downFile == null) {
+            Log.i("SheepYang", "downFile == null");
+            readBytesFromStream(is);
+            return;
+//            throw new NullPointerException("downFile == null");
+        }
+        byte[] buffer = new byte[1024];
+        int len;
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(downFile);
+            while ((len = is.read(buffer)) != -1) {
+                Log.i("SheepYang", "fos.write:" + len);
+                fos.write(buffer, 0, len);
+            }
+            fos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (is != null) {
+                is.close();
+                Log.i("SheepYang", "is.close");
+            }
+            if (fos != null) {
+                fos.close();
+                Log.i("SheepYang", "fos.close");
+            }
+        }
+//        postSuccess(call,null);
     }
 
     /**
@@ -185,6 +242,7 @@ public class SpeedManager {
      * @param done
      */
     private void handleSpeed(long currentBytes, boolean done) {
+        Log.i("SheepYang", String.format("handleSpeed currentBytes:%d, done:%b", currentBytes, done));
         if (mSpeedCount < maxCount) {
             mTempSpeed = currentBytes / (mSpeedCount + 1);
             mTotalSpeeds.put(mSpeedCount, mTempSpeed);
@@ -194,6 +252,7 @@ public class SpeedManager {
                 speedListener.speeding(mTempSpeed, mTempSpeed / 4);
             }
         }
+        Log.i("SheepYang", String.format("handleResultSpeed handleSpeed ,mSpeedCount >= maxCount:%b, done:%b", mSpeedCount >= maxCount, done));
         handleResultSpeed(currentBytes, mSpeedCount >= maxCount || done);
     }
 
@@ -227,15 +286,6 @@ public class SpeedManager {
         }
     }
 
-    private void readBytesFromStream(InputStream is) throws IOException {
-        int len;
-        int size = 1024;
-        byte[] buf = new byte[size];
-        while (!mIsStopSpeed && (len = is.read(buf, 0, size)) != -1) {
-            Log.d("TAG", "byte length : " + len);
-        }
-    }
-
     /**
      * 建造者模式
      * 构建测速管理类
@@ -250,6 +300,7 @@ public class SpeedManager {
         private long timeOut;
         private NetDelayListener delayListener;
         private SpeedListener speedListener;
+        private File downFile;
 
         public Builder() {
             pingCmd = DEFAULE_CMD;
@@ -278,6 +329,16 @@ public class SpeedManager {
             return this;
         }
 
+        /**
+         * 设置保存file
+         *
+         * @param file
+         */
+        public Builder setDownFile(File file) {
+            this.downFile = file;
+            return this;
+        }
+
         public Builder setNetDelayListener(NetDelayListener delayListener) {
             this.delayListener = delayListener;
             return this;
@@ -303,6 +364,9 @@ public class SpeedManager {
             }
             if (null != this.delayListener) {
                 manager.delayListener = this.delayListener;
+            }
+            if (null != this.downFile) {
+                manager.downFile = this.downFile;
             }
             if (null != this.speedListener) {
                 manager.speedListener = this.speedListener;
