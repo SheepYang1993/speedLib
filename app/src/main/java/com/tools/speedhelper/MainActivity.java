@@ -1,7 +1,10 @@
 package com.tools.speedhelper;
 
+import android.content.Intent;
+import android.os.BaseBundle;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
@@ -10,21 +13,41 @@ import com.tools.speedlib.SpeedManager;
 import com.tools.speedlib.listener.NetDelayListener;
 import com.tools.speedlib.listener.SpeedListener;
 import com.tools.speedlib.utils.ConverUtil;
-import com.tools.speedlib.views.AwesomeSpeedView;
-import com.tools.speedlib.views.NiceSpeedView;
+import com.tools.speedlib.utils.FileUtil;
 import com.tools.speedlib.views.PointerSpeedView;
-
-import java.io.File;
-import java.io.IOException;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static final String FILE_BASE = "SpeedLib";
+    private static final String EXTRA_RESULT = "result";
+    private static final String EXTRA_DOWNSPEED = "downSpeed";
+    private static final String EXTRA_DOWNRESULT = "downResult";
+
     private PointerSpeedView speedometer;
     private TextView tx_delay;
     private TextView tx_down;
     private TextView tx_up;
     SpeedManager speedManager;
+    private Handler mHandle = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            Bundle data = msg.getData();
+            String[] result = data.getStringArray(EXTRA_RESULT);
+            long downSpeed = data.getLong(EXTRA_DOWNSPEED);
+            String[] downResult = data.getStringArray(EXTRA_DOWNRESULT);
+            switch (msg.what) {
+                case 0:
+                case 1:
+                    tx_down.setText(result[0]);
+                    setSpeedView(downSpeed, downResult);
+                    tx_up.setText(result[1]);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void start() {
         speedManager = new SpeedManager.Builder()
+                .setUploadSpeedUrl("http://img.zonelian.com/test-speed-upload")
                 .setNetDelayListener(new NetDelayListener() {
                     @Override
                     public void result(String delay) {
@@ -55,77 +79,45 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void speeding(long downSpeed, long upSpeed) {
                         String[] downResult = ConverUtil.fomartSpeed(downSpeed);
-                        tx_down.setText(downResult[0] + downResult[1]);
-                        setSpeedView(downSpeed, downResult);
-
                         String[] upResult = ConverUtil.fomartSpeed(upSpeed);
-                        tx_up.setText(upResult[0] + upResult[1]);
+                        String[] result = new String[2];
+                        result[0] = downResult[0] + downResult[1];
+                        result[1] = upResult[0] + upResult[1];
+                        Message msg = Message.obtain();
+                        msg.what = 0;
+                        Bundle data = new Bundle();
+                        data.putStringArray(EXTRA_RESULT, result);
+                        data.putLong(EXTRA_DOWNSPEED, downSpeed);
+                        data.putStringArray(EXTRA_DOWNRESULT, downResult);
+                        msg.setData(data);
+                        mHandle.sendMessage(msg);
                     }
 
                     @Override
                     public void finishSpeed(long finalDownSpeed, long finalUpSpeed) {
                         String[] downResult = ConverUtil.fomartSpeed(finalDownSpeed);
-                        tx_down.setText(downResult[0] + downResult[1]);
-                        setSpeedView(finalDownSpeed, downResult);
-
                         String[] upResult = ConverUtil.fomartSpeed(finalUpSpeed);
-                        tx_up.setText(upResult[0] + upResult[1]);
+                        String[] result = new String[2];
+                        result[0] = downResult[0] + downResult[1];
+                        result[1] = upResult[0] + upResult[1];
+                        Message msg = Message.obtain();
+                        msg.what = 1;
+                        Bundle data = new Bundle();
+                        data.putStringArray(EXTRA_RESULT, result);
+                        data.putLong(EXTRA_DOWNSPEED, finalDownSpeed);
+                        data.putStringArray(EXTRA_DOWNRESULT, downResult);
+                        msg.setData(data);
+                        mHandle.sendMessage(msg);
                     }
                 })
                 .setPindCmd("59.61.92.196")
                 .setSpeedCount(6)
-                .setDownFile(getDownFile("download.apk"))
+                .setDownFile(FileUtil.getDownFile())
                 .setSpeedTimeOut(15000)
                 .builder();
         speedManager.startSpeed();
     }
 
-    private File getDownFile(String filename) {
-        File rootFile = Environment.getExternalStorageDirectory();
-        File downFile = new File(rootFile, FILE_BASE + File.separator + filename);
-        if (createOrExistsFile(downFile)) {
-            return downFile;
-        } else {
-            return null;
-        }
-    }
-
-
-    /**
-     * 判断文件是否存在，不存在则判断是否创建成功
-     *
-     * @param file 文件
-     * @return {@code true}: 存在或创建成功<br>{@code false}: 不存在或创建失败
-     */
-    private static boolean createOrExistsFile(File file) {
-        if (file == null) {
-            return false;
-        }
-        // 如果存在，是文件则返回true，是目录则返回false
-        if (file.exists()) {
-            return file.isFile();
-        }
-        if (!createOrExistsDir(file.getParentFile())) {
-            return false;
-        }
-        try {
-            return file.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * 判断目录是否存在，不存在则判断是否创建成功
-     *
-     * @param file 文件
-     * @return {@code true}: 存在或创建成功<br>{@code false}: 不存在或创建失败
-     */
-    private static boolean createOrExistsDir(File file) {
-        // 如果存在，是目录则返回true，是文件则返回false，不存在则返回是否创建成功
-        return file != null && (file.exists() ? file.isDirectory() : file.mkdirs());
-    }
 
     private void setSpeedView(long speed, String[] result) {
         if (null != result && 2 == result.length) {
