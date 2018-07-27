@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/SpeedHelper.iml" filepath="$PROJECT_DIR$/SpeedHelper.iml" />
+      <module fileurl="file://D:\Android\Project\Github\speedLib\SpeedHelper.iml" filepath="D:\Android\Project\Github\speedLib\SpeedHelper.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/speedLib.iml" filepath="$PROJECT_DIR$/speedLib.iml" />
       <module fileurl="file://$PROJECT_DIR$/speedlib/speedlib.iml" filepath="$PROJECT_DIR$/speedlib/speedlib.iml" />
     </modules>
   </component>

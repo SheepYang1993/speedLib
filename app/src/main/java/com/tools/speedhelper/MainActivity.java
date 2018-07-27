@@ -10,6 +10,8 @@ import com.tools.speedlib.SpeedManager;
 import com.tools.speedlib.listener.NetDelayListener;
 import com.tools.speedlib.listener.SpeedListener;
 import com.tools.speedlib.utils.ConverUtil;
+import com.tools.speedlib.views.AwesomeSpeedView;
+import com.tools.speedlib.views.NiceSpeedView;
 import com.tools.speedlib.views.PointerSpeedView;
 
 import java.io.File;
@@ -71,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 })
                 .setPindCmd("59.61.92.196")
-                .setSpeedCount(2)
+                .setSpeedCount(6)
                 .setDownFile(getDownFile("download.apk"))
                 .setSpeedTimeOut(15000)
                 .builder();
