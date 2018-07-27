@@ -162,14 +162,6 @@ public class NiceSpeedView extends Speedometer {
         canvas.drawArc(speedometerRect, getStartDegree()
                 , (getEndDegree() - getStartDegree()) * getOffsetSpeed(), true, speedometerPaint);
 
-
-//        int c = getCenterCircleColor();
-//        circlePaint.setColor(Color.argb(120, Color.red(c), Color.green(c), Color.blue(c)));
-//        canvas.drawCircle(getSize() * .5f, getSize() * .5f, getWidthPa() / 14f, circlePaint);
-//        circlePaint.setColor(c);
-//        canvas.drawCircle(getSize() * .5f, getSize() * .5f, getWidthPa() / 22f, circlePaint);
-
-
         if (imageSpeedometer != null) {
             imageSpeedometer.setBounds((int) getViewLeft() + getPadding(), (int) getViewTop() + getPadding()
                     , (int) getViewRight() - getPadding(), (int) getViewBottom() - getPadding());
@@ -177,16 +169,6 @@ public class NiceSpeedView extends Speedometer {
         }
 
         drawIndicator(canvas);
-
-        drawNotes(canvas);
-        drawSpeedUnitText(canvas);
-//        canvas.save();
-//        canvas.rotate(90 + getDegree(), getSize() * .5f, getSize() * .5f);
-//        canvas.drawCircle(getSize() * .5f, getSpeedometerWidth() * .5f + dpTOpx(8) + getPadding()
-//                , getSpeedometerWidth() + dpTOpx(8), markPaint);
-//        canvas.drawCircle(getSize() * .5f, getSpeedometerWidth() * .5f + dpTOpx(8) + getPadding()
-//                , getSpeedometerWidth() + dpTOpx(1), speedometerPaint);
-//        canvas.restore();
     }
 
     @Override
@@ -200,19 +182,6 @@ public class NiceSpeedView extends Speedometer {
         markPath.reset();
         markPath.moveTo(getSize() * .5f, getSpeedometerWidth() + dpTOpx(8) + dpTOpx(4) + getPadding());
         markPath.lineTo(getSize() * .5f, getSpeedometerWidth() + dpTOpx(8) + dpTOpx(4) + getPadding() + getSize() / 60);
-
-
-        //绘制刻度
-//        c.save();
-//        c.rotate(90f + getStartDegree(), getSize() * .5f, getSize() * .5f);
-//        float everyDegree = (getEndDegree() - getStartDegree()) * .111f;
-//        for (float i = getStartDegree(); i < getEndDegree() - (2f * everyDegree); i += everyDegree) {
-//            c.rotate(everyDegree, getSize() * .5f, getSize() * .5f);
-//            c.drawPath(markPath, markPaint);
-//        }
-//        c.restore();
-
-//        drawDefMinMaxSpeedPosition(c);
 
         if (imageSpeedometer != null) {
             imageSpeedometer.setBounds((int) getViewLeft() + getPadding(), (int) getViewTop() + getPadding()
