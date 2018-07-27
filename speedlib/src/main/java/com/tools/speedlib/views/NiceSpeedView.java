@@ -20,7 +20,6 @@ import com.tools.speedlib.R;
 import com.tools.speedlib.views.base.Speedometer;
 import com.tools.speedlib.views.base.SpeedometerDefault;
 import com.tools.speedlib.views.components.Indicators.ImageIndicator;
-import com.tools.speedlib.views.components.Indicators.SpindleIndicator;
 
 /**
  * this Library build By Anas Altair
@@ -30,13 +29,14 @@ public class NiceSpeedView extends Speedometer {
 
     private Path markPath = new Path();
     private Paint speedometerPaint = new Paint(Paint.ANTI_ALIAS_FLAG),
+            speedometer2Paint = new Paint(Paint.ANTI_ALIAS_FLAG),
             pointerPaint = new Paint(Paint.ANTI_ALIAS_FLAG),
             pointerBackPaint = new Paint(Paint.ANTI_ALIAS_FLAG),
             circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG),
             markPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private RectF speedometerRect = new RectF();
 
-    private int speedometerColor = Color.parseColor("#eeeeee"), pointerColor = Color.WHITE;
+    private int speedometerColor = Color.parseColor("#00bafe"), pointerColor = Color.WHITE;
     private Drawable imageSpeedometer;
 
     public NiceSpeedView(Context context) {
@@ -55,12 +55,13 @@ public class NiceSpeedView extends Speedometer {
 
     @Override
     protected void defaultValues() {
-        super.setTextColor(Color.WHITE);
-        super.setSpeedTextColor(Color.WHITE);
-        super.setUnitTextColor(Color.WHITE);
-        super.setSpeedTextSize(dpTOpx(24f));
-        super.setUnitTextSize(dpTOpx(11f));
+        super.setTextColor(Color.BLACK);
+        super.setSpeedTextColor(Color.BLACK);
+        super.setUnitTextColor(Color.BLACK);
+        super.setSpeedTextSize(dpTOpx(20f));
+        super.setUnitTextSize(dpTOpx(20f));
         super.setSpeedTextTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        super.setUnitUnderSpeedText(false);
     }
 
     @Override
@@ -69,9 +70,10 @@ public class NiceSpeedView extends Speedometer {
         //设置指针样式
         speedometerDefault.indicator = new ImageIndicator(getContext(), R.drawable.icon_speed_pointer);
         //设置背景颜色
-        speedometerDefault.backgroundCircleColor = Color.parseColor("#00bafe");
+        speedometerDefault.backgroundCircleColor = getResources().getColor(R.color.gray);
         //设置指示条宽度
-        speedometerDefault.speedometerWidth = dpTOpx(10f);
+        speedometerDefault.speedometerWidth = dpTOpx(1f);
+        speedometerDefault.highSpeedColor = getResources().getColor(R.color.blue);
         setImageSpeedometer(R.drawable.img_speed_bg);
         return speedometerDefault;
     }
@@ -102,8 +104,10 @@ public class NiceSpeedView extends Speedometer {
     }
 
     private void init() {
-        speedometerPaint.setStyle(Paint.Style.STROKE);
+        speedometerPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         speedometerPaint.setStrokeCap(Paint.Cap.ROUND);
+        speedometer2Paint.setStyle(Paint.Style.STROKE);
+        speedometer2Paint.setStrokeCap(Paint.Cap.ROUND);
         markPaint.setStyle(Paint.Style.STROKE);
         markPaint.setStrokeCap(Paint.Cap.ROUND);
         markPaint.setStrokeWidth(dpTOpx(2));
@@ -133,7 +137,7 @@ public class NiceSpeedView extends Speedometer {
     protected void onSizeChanged(int w, int h, int oldW, int oldH) {
         super.onSizeChanged(w, h, oldW, oldH);
 
-        float risk = getSpeedometerWidth() * .5f + dpTOpx(8) + getPadding();
+        float risk = 0;
         speedometerRect.set(risk, risk, getSize() - risk, getSize() - risk);
 
         updateRadial();
@@ -141,8 +145,10 @@ public class NiceSpeedView extends Speedometer {
     }
 
     private void initDraw() {
+        speedometer2Paint.setColor(getResources().getColor(R.color.gray));
+        speedometer2Paint.setStrokeWidth(getSpeedometerWidth());
         speedometerPaint.setStrokeWidth(getSpeedometerWidth());
-        speedometerPaint.setShader(updateSweep());
+        speedometerPaint.setColor(getResources().getColor(R.color.blue));
         markPaint.setColor(getMarkColor());
     }
 
@@ -151,63 +157,79 @@ public class NiceSpeedView extends Speedometer {
         super.onDraw(canvas);
         initDraw();
 
-        canvas.drawArc(speedometerRect, getStartDegree(), getEndDegree() - getStartDegree(), false, speedometerPaint);
+        canvas.drawArc(speedometerRect, getStartDegree(), getEndDegree() - getStartDegree(), false, speedometer2Paint);
 
-        canvas.save();
-        canvas.rotate(90 + getDegree(), getSize() * .5f, getSize() * .5f);
-        canvas.drawCircle(getSize() * .5f, getSpeedometerWidth() * .5f + dpTOpx(8) + getPadding()
-                , getSpeedometerWidth() * .5f + dpTOpx(8), pointerBackPaint);
-        canvas.drawCircle(getSize() * .5f, getSpeedometerWidth() * .5f + dpTOpx(8) + getPadding()
-                , getSpeedometerWidth() * .5f + dpTOpx(1), pointerPaint);
-        canvas.restore();
+        canvas.drawArc(speedometerRect, getStartDegree()
+                , (getEndDegree() - getStartDegree()) * getOffsetSpeed(), true, speedometerPaint);
 
-        drawSpeedUnitText(canvas);
+
+//        int c = getCenterCircleColor();
+//        circlePaint.setColor(Color.argb(120, Color.red(c), Color.green(c), Color.blue(c)));
+//        canvas.drawCircle(getSize() * .5f, getSize() * .5f, getWidthPa() / 14f, circlePaint);
+//        circlePaint.setColor(c);
+//        canvas.drawCircle(getSize() * .5f, getSize() * .5f, getWidthPa() / 22f, circlePaint);
+
+
+        if (imageSpeedometer != null) {
+            imageSpeedometer.setBounds((int) getViewLeft() + getPadding(), (int) getViewTop() + getPadding()
+                    , (int) getViewRight() - getPadding(), (int) getViewBottom() - getPadding());
+            imageSpeedometer.draw(canvas);
+        }
+
         drawIndicator(canvas);
 
-        int c = getCenterCircleColor();
-        circlePaint.setColor(Color.argb(120, Color.red(c), Color.green(c), Color.blue(c)));
-        canvas.drawCircle(getSize() * .5f, getSize() * .5f, getWidthPa() / 14f, circlePaint);
-        circlePaint.setColor(c);
-        canvas.drawCircle(getSize() * .5f, getSize() * .5f, getWidthPa() / 22f, circlePaint);
-
         drawNotes(canvas);
+        drawSpeedUnitText(canvas);
+//        canvas.save();
+//        canvas.rotate(90 + getDegree(), getSize() * .5f, getSize() * .5f);
+//        canvas.drawCircle(getSize() * .5f, getSpeedometerWidth() * .5f + dpTOpx(8) + getPadding()
+//                , getSpeedometerWidth() + dpTOpx(8), markPaint);
+//        canvas.drawCircle(getSize() * .5f, getSpeedometerWidth() * .5f + dpTOpx(8) + getPadding()
+//                , getSpeedometerWidth() + dpTOpx(1), speedometerPaint);
+//        canvas.restore();
     }
 
     @Override
     protected void updateBackgroundBitmap() {
         Canvas c = createBackgroundBitmapCanvas();
+        if (speedometerPaint == null) {
+            return;
+        }
         initDraw();
+
+        markPath.reset();
+        markPath.moveTo(getSize() * .5f, getSpeedometerWidth() + dpTOpx(8) + dpTOpx(4) + getPadding());
+        markPath.lineTo(getSize() * .5f, getSpeedometerWidth() + dpTOpx(8) + dpTOpx(4) + getPadding() + getSize() / 60);
+
+
+        //绘制刻度
+//        c.save();
+//        c.rotate(90f + getStartDegree(), getSize() * .5f, getSize() * .5f);
+//        float everyDegree = (getEndDegree() - getStartDegree()) * .111f;
+//        for (float i = getStartDegree(); i < getEndDegree() - (2f * everyDegree); i += everyDegree) {
+//            c.rotate(everyDegree, getSize() * .5f, getSize() * .5f);
+//            c.drawPath(markPath, markPaint);
+//        }
+//        c.restore();
+
+//        drawDefMinMaxSpeedPosition(c);
 
         if (imageSpeedometer != null) {
             imageSpeedometer.setBounds((int) getViewLeft() + getPadding(), (int) getViewTop() + getPadding()
                     , (int) getViewRight() - getPadding(), (int) getViewBottom() - getPadding());
             imageSpeedometer.draw(c);
         }
-
-        markPath.reset();
-        markPath.moveTo(getSize() * .5f, getSpeedometerWidth() + dpTOpx(8) + dpTOpx(4) + getPadding());
-        markPath.lineTo(getSize() * .5f, getSpeedometerWidth() + dpTOpx(8) + dpTOpx(4) + getPadding() + getSize() / 60);
-
-        c.save();
-        c.rotate(90f + getStartDegree(), getSize() * .5f, getSize() * .5f);
-        float everyDegree = (getEndDegree() - getStartDegree()) * .111f;
-        for (float i = getStartDegree(); i < getEndDegree() - (2f * everyDegree); i += everyDegree) {
-            c.rotate(everyDegree, getSize() * .5f, getSize() * .5f);
-            c.drawPath(markPath, markPaint);
-        }
-        c.restore();
-
-        drawDefMinMaxSpeedPosition(c);
     }
 
     private SweepGradient updateSweep() {
+        int grayColor = Color.argb(255, Color.red(speedometerColor), Color.green(speedometerColor), Color.blue(speedometerColor));
         int startColor = Color.argb(150, Color.red(speedometerColor), Color.green(speedometerColor), Color.blue(speedometerColor));
         int color2 = Color.argb(220, Color.red(speedometerColor), Color.green(speedometerColor), Color.blue(speedometerColor));
         int color3 = Color.argb(70, Color.red(speedometerColor), Color.green(speedometerColor), Color.blue(speedometerColor));
         int endColor = Color.argb(15, Color.red(speedometerColor), Color.green(speedometerColor), Color.blue(speedometerColor));
         float position = getOffsetSpeed() * (getEndDegree() - getStartDegree()) / 360f;
         SweepGradient sweepGradient = new SweepGradient(getSize() * .5f, getSize() * .5f
-                , new int[]{startColor, color2, speedometerColor, color3, endColor, startColor}
+                , new int[]{grayColor, grayColor, grayColor, grayColor, grayColor, grayColor}
                 , new float[]{0f, position * .5f, position, position, .99f, 1f});
         Matrix matrix = new Matrix();
         matrix.postRotate(getStartDegree(), getSize() * .5f, getSize() * .5f);
