@@ -59,7 +59,7 @@ public class SpeedManager {
             switch (msg.what) {
                 case MSG_TIMEOUT:
                     if (!mIsStopSpeed) {
-                        Log.i("SheepYang", "handleResultSpeed MSG_TIMEOUT");
+//                        Log.i("SheepYang", "handleResultSpeed MSG_TIMEOUT");
                         mIsUploadDone = true;
                         handleResultSpeed(0L, true);
                     }
@@ -137,7 +137,7 @@ public class SpeedManager {
             @Override
             public void onUIFinish(int taskId, long currentBytes, long contentLength, boolean done) {
                 super.onUIFinish(taskId, currentBytes, contentLength, done);
-                Log.i("SheepYang", "handleResultSpeed onUIFinish");
+//                Log.i("SheepYang", "handleResultSpeed onUIFinish");
                 handleResultSpeed(currentBytes, done);
             }
         };
@@ -149,12 +149,12 @@ public class SpeedManager {
         downloadCall.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.i("SheepYang", "onFailure");
+//                Log.i("SheepYang", "onFailure");
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                Log.i("SheepYang", "onResponse");
+//                Log.i("SheepYang", "onResponse");
 //                readBytesFromStream(response.body().byteStream());
                 download(call, response);
             }
@@ -178,7 +178,7 @@ public class SpeedManager {
     private void download(Call call, Response response) throws IOException {
         InputStream is = response.body().byteStream();
         if (downFile == null) {
-            Log.i("SheepYang", "downFile == null");
+//            Log.i("SheepYang", "downFile == null");
             readBytesFromStream(is);
             return;
 //            throw new NullPointerException("downFile == null");
@@ -195,7 +195,7 @@ public class SpeedManager {
                 totalSize += len;
                 if (totalSize < 2 * 1024 * 1024) {
                     //大于2MB不再下载，因为上传接口限制最大只能2MB
-                    Log.i("SheepYang", "totalSize:" + totalSize);
+//                    Log.i("SheepYang", "totalSize:" + totalSize);
                     fos.write(buffer, 0, len);
                 }
 //                Log.i("SheepYang", "fos.write:" + len);
@@ -206,11 +206,11 @@ public class SpeedManager {
         } finally {
             if (is != null) {
                 is.close();
-                Log.i("SheepYang", "is.close");
+//                Log.i("SheepYang", "is.close");
             }
             if (fos != null) {
                 fos.close();
-                Log.i("SheepYang", "fos.close");
+//                Log.i("SheepYang", "fos.close");
             }
         }
 //        postSuccess(downloadCall,null);
@@ -270,7 +270,7 @@ public class SpeedManager {
      * @param done
      */
     private void handleSpeed(long currentBytes, boolean done) {
-        Log.i("SheepYang", String.format("handleSpeed currentBytes:%d, done:%b", currentBytes, done));
+//        Log.i("SheepYang", String.format("handleSpeed currentBytes:%d, done:%b", currentBytes, done));
         if (mSpeedCount < maxCount) {
             mTempSpeed = currentBytes / (mSpeedCount + 1);
             mTotalSpeeds.put(mSpeedCount, mTempSpeed);
@@ -290,7 +290,7 @@ public class SpeedManager {
                 speedListener.speeding(mTempSpeed, uploadSpeed);
             }
         }
-        Log.i("SheepYang", String.format("handleResultSpeed handleSpeed ,mSpeedCount >= maxCount:%b, done:%b", mSpeedCount >= maxCount, done));
+//        Log.i("SheepYang", String.format("handleResultSpeed handleSpeed ,mSpeedCount >= maxCount:%b, done:%b", mSpeedCount >= maxCount, done));
         handleResultSpeed(currentBytes, mSpeedCount >= maxCount || done);
     }
 
@@ -374,7 +374,7 @@ public class SpeedManager {
             handleResultSpeed(mCurrentBytes, true);
             return;
         }
-        Log.i("SheepYang", "uploadFile");
+//        Log.i("SheepYang", "uploadFile");
         OkHttpClient client = new OkHttpClient();
         // form 表单形式上传
         MultipartBody.Builder requestBody = new MultipartBody.Builder().setType(MultipartBody.FORM);
@@ -400,7 +400,7 @@ public class SpeedManager {
             public void onFailure(Call call, IOException e) {
                 mIsUploadDone = true;
                 mUploadTime = 0;
-                Log.i("SheepYang", "upload onFailure");
+//                Log.i("SheepYang", "upload onFailure");
             }
 
             @Override
@@ -410,9 +410,9 @@ public class SpeedManager {
                     String str = response.body().string();
                     mUploadTime = System.nanoTime() - tempTime;
                     handleResultSpeed(mCurrentBytes, true);
-                    Log.i("SheepYang", "upload onResponse message:" + response.message() + " , body " + str);
+//                    Log.i("SheepYang", "upload onResponse message:" + response.message() + " , body " + str);
                 } else {
-                    Log.i("SheepYang", response.message() + "upload onResponse error : body " + response.body().string());
+//                    Log.i("SheepYang", response.message() + "upload onResponse error : body " + response.body().string());
                 }
             }
         });

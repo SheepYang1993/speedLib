@@ -80,7 +80,7 @@ public abstract class UIProgressListener implements ProgressListener {
             Message start = Message.obtain();
             start.obj = new ProgressModel(bytesWrite, contentLength, done);
             start.what = ProgressHandler.START;
-            Log.i("SheepYang", "Progress START");
+//            Log.i("SheepYang", "Progress START");
             mHandler.sendMessage(start);
         }
 
@@ -90,7 +90,7 @@ public abstract class UIProgressListener implements ProgressListener {
             Message message = Message.obtain();
             message.obj = new ProgressModel(bytesWrite, contentLength, done);
             message.what = ProgressHandler.UPDATE;
-            Log.i("SheepYang", "Progress UPDATE");
+//            Log.i("SheepYang", "Progress UPDATE");
             mHandler.sendMessage(message);
         }
 
@@ -98,7 +98,7 @@ public abstract class UIProgressListener implements ProgressListener {
             Message finish = Message.obtain();
             finish.obj = new ProgressModel(bytesWrite, contentLength, done);
             finish.what = ProgressHandler.FINISH;
-            Log.i("SheepYang", "Progress FINISH");
+//            Log.i("SheepYang", "Progress FINISH");
             mHandler.sendMessage(finish);
         }
     }
