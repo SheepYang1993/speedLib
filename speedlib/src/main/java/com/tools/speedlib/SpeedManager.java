@@ -336,7 +336,7 @@ public class SpeedManager {
                     }
                     if (null != speedListener) {
                         long length = downFile.length();
-                        long time = mUploadTime / 1000000000;
+                        long time = (mUploadTime / 1000000000) <= 0 ? 1 : (mUploadTime / 1000000000);
                         long uploadSpeed = mUploadTime > 0 ? length / time : 0L;
                         if (mTotalSpeeds.size() > 0) {
                             speedListener.finishSpeed(finalSpeedTotal / mTotalSpeeds.size(), uploadSpeed);
