@@ -1,5 +1,5 @@
 <resources>
     <color name="C01_ST">#1e96ff</color>
     <!-- 用于副标题、描述文字、说明文字-->
-    <color name="C04_ST">#929292</color>
+    <color name="gray_6e">#eeeeee</color>
 </resources>
