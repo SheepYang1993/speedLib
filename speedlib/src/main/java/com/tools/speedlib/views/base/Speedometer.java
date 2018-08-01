@@ -347,8 +347,8 @@ public abstract class Speedometer extends Gauge {
     }
 
     /**
-     * change the start of speedometer (at {@link #minSpeed}).
-     * @param startDegree the start of speedometer.
+     * change the downloadStart of speedometer (at {@link #minSpeed}).
+     * @param startDegree the downloadStart of speedometer.
      * @throws IllegalArgumentException if {@code startDegree} negative.
      * @throws IllegalArgumentException if {@code startDegree >= endDegree}.
      * @throws IllegalArgumentException if the difference between {@code endDegree and startDegree} bigger than 360.
@@ -373,8 +373,8 @@ public abstract class Speedometer extends Gauge {
     }
 
     /**
-     * change start and end of speedometer.
-     * @param startDegree the start of speedometer.
+     * change downloadStart and end of speedometer.
+     * @param startDegree the downloadStart of speedometer.
      * @param endDegree the end of speedometer.
      * @throws IllegalArgumentException if {@code startDegree OR endDegree} negative.
      * @throws IllegalArgumentException if {@code startDegree >= endDegree}.

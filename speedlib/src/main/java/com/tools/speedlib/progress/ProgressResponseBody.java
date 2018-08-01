@@ -15,9 +15,7 @@
  */
 package com.tools.speedlib.progress;
 
-import android.util.Log;
-
-import com.tools.speedlib.listener.ProgressListener;
+import com.tools.speedlib.listener.DownloadProgressListener;
 
 import java.io.IOException;
 
@@ -33,7 +31,7 @@ public class ProgressResponseBody extends ResponseBody {
     //实际的待包装响应体
     private final ResponseBody responseBody;
     //进度回调接口
-    private final ProgressListener progressListener;
+    private final DownloadProgressListener mDownloadProgressListener;
     //包装完成的BufferedSource
     private BufferedSource bufferedSource;
 
@@ -41,11 +39,11 @@ public class ProgressResponseBody extends ResponseBody {
      * 构造函数，赋值
      *
      * @param responseBody     待包装的响应体
-     * @param progressListener 回调接口
+     * @param downloadProgressListener 回调接口
      */
-    public ProgressResponseBody(ResponseBody responseBody, ProgressListener progressListener) {
+    public ProgressResponseBody(ResponseBody responseBody, DownloadProgressListener downloadProgressListener) {
         this.responseBody = responseBody;
-        this.progressListener = progressListener;
+        this.mDownloadProgressListener = downloadProgressListener;
     }
 
 
@@ -103,9 +101,9 @@ public class ProgressResponseBody extends ResponseBody {
                 //增加当前读取的字节数，如果读取完成了bytesRead会返回-1
                 totalBytesRead += (bytesRead != -1 ? bytesRead : 0);
                 //回调，如果contentLength()不知道长度，会返回-1
-                if (progressListener != null) {
+                if (mDownloadProgressListener != null) {
 //                    Log.i("SheepYang2", String.format("totalBytesRead:%d, responseBody.contentLength():%d, bytesRead == -1:%b", totalBytesRead, responseBody.contentLength(), bytesRead == -1));
-                    progressListener.onProgress(totalBytesRead, responseBody.contentLength(), bytesRead == -1);
+                    mDownloadProgressListener.onDownloadProgress(totalBytesRead, responseBody.contentLength(), bytesRead == -1);
                 }
                 return bytesRead;
             }

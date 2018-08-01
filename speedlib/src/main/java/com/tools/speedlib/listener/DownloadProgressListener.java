@@ -15,8 +15,8 @@
  */
 package com.tools.speedlib.listener;
 
-public interface ProgressListener {
-    void onProgress(long currentBytes, long contentLength, boolean done);
-    boolean isCancled();
-    void setCancled();
+public interface DownloadProgressListener {
+    void onDownloadProgress(long currentBytes, long contentLength, boolean done);
+    boolean isDownloadCancled();
+    void setDownloadCancled();
 }

@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setSpeedListener(new SpeedListener() {
                     @Override
-                    public void speeding(long downSpeed, long upSpeed) {
+                    public void onDownloadSpeeding(long downSpeed, long upSpeed) {
                         String[] downResult = ConverUtil.fomartSpeed(downSpeed);
                         String[] upResult = ConverUtil.fomartSpeed(upSpeed);
                         String[] result = new String[2];
@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void finishSpeed(long finalDownSpeed, long finalUpSpeed) {
+                    public void onDownloadSpeedFinish(long finalDownSpeed, long finalUpSpeed) {
                         String[] downResult = ConverUtil.fomartSpeed(finalDownSpeed);
                         String[] upResult = ConverUtil.fomartSpeed(finalUpSpeed);
                         String[] result = new String[2];
@@ -110,9 +110,20 @@ public class MainActivity extends AppCompatActivity {
                         msg.setData(data);
                         mHandle.sendMessage(msg);
                     }
+
+                    @Override
+                    public void onUploadSpeeding(long upSpeed) {
+
+                    }
+
+                    @Override
+                    public void onUploadSpeedFinish(long finalUpSpeed) {
+
+                    }
                 })
                 .setPindCmd("59.61.92.196")
                 .setSpeedCount(6)
+                .setMode(SpeedManager.MODE_REAL_UPLOAD)
                 .setDownFile(FileUtil.getDownFile())
                 .setSpeedTimeOut(15000)
                 .builder();

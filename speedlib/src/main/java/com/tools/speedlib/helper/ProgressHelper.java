@@ -15,7 +15,7 @@
  */
 package com.tools.speedlib.helper;
 
-import com.tools.speedlib.listener.ProgressListener;
+import com.tools.speedlib.listener.DownloadProgressListener;
 import com.tools.speedlib.progress.ProgressResponseBody;
 
 import java.io.IOException;
@@ -32,10 +32,10 @@ public class ProgressHelper {
      * 包装OkHttpClient，用于下载文件的回调
      *
      * @param client           待包装的OkHttpClient
-     * @param progressListener 进度回调接口
+     * @param downloadProgressListener 进度回调接口
      * @return 包装后的OkHttpClient，使用clone方法返回
      */
-    public static OkHttpClient addProgressResponseListener(OkHttpClient client, final ProgressListener progressListener) {
+    public static OkHttpClient addProgressResponseListener(OkHttpClient client, final DownloadProgressListener downloadProgressListener) {
         Interceptor interceptor = new Interceptor() {
             @Override
             public Response intercept(Chain chain) throws IOException {
@@ -43,7 +43,7 @@ public class ProgressHelper {
                 Response originalResponse = chain.proceed(chain.request());
                 //包装响应体并返回
                 return originalResponse.newBuilder()
-                        .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                        .body(new ProgressResponseBody(originalResponse.body(), downloadProgressListener))
                         .build();
             }
         };

@@ -24,12 +24,12 @@
                 })
                 .setSpeedListener(new SpeedListener() {
                     @Override
-                    public void speeding(long downSpeed, long upSpeed) {
+                    public void onDownloadSpeeding(long downSpeed, long upSpeed) {
 
                     }
 
                     @Override
-                    public void finishSpeed(long finalDownSpeed, long finalUpSpeed) {
+                    public void onDownloadSpeedFinish(long finalDownSpeed, long finalUpSpeed) {
 
                     }
                 })

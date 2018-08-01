@@ -17,13 +17,12 @@ package com.tools.speedlib.listener.impl;
 
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
-import com.tools.speedlib.listener.ProgressListener;
+import com.tools.speedlib.listener.DownloadProgressListener;
 import com.tools.speedlib.listener.impl.handler.ProgressHandler;
 import com.tools.speedlib.listener.impl.model.ProgressModel;
 
-public abstract class UIProgressListener implements ProgressListener {
+public abstract class UIDownloadProgressListener implements DownloadProgressListener {
     private int id;
     private boolean isFirst = false;
     private long updateTime = System.currentTimeMillis();
@@ -32,7 +31,7 @@ public abstract class UIProgressListener implements ProgressListener {
     //主线程Handler
     private Handler mHandler;
 
-    public UIProgressListener() {
+    public UIDownloadProgressListener() {
         this.id = id;
         mHandler = new UIHandler(this, id);
     }
@@ -41,36 +40,36 @@ public abstract class UIProgressListener implements ProgressListener {
     private static class UIHandler extends ProgressHandler {
         private int id;
 
-        public UIHandler(UIProgressListener uiProgressListener, int id) {
-            super(uiProgressListener);
+        public UIHandler(UIDownloadProgressListener uiDownloadProgressListener, int id) {
+            super(uiDownloadProgressListener);
             this.id = id;
         }
 
         @Override
-        public void start(UIProgressListener uiProgressListener, long currentBytes, long contentLength, boolean done) {
-            if (uiProgressListener != null) {
-                uiProgressListener.onUIStart(id, currentBytes, contentLength, done);
+        public void downloadStart(UIDownloadProgressListener uiDownloadProgressListener, long currentBytes, long contentLength, boolean done) {
+            if (uiDownloadProgressListener != null) {
+                uiDownloadProgressListener.onUIDownloadStart(id, currentBytes, contentLength, done);
             }
         }
 
         @Override
-        public void progress(UIProgressListener uiProgressListener, long currentBytes, long contentLength, boolean done) {
-            if (uiProgressListener != null) {
-                uiProgressListener.onUIProgress(id, currentBytes, contentLength, done);
+        public void downloadProgress(UIDownloadProgressListener uiDownloadProgressListener, long currentBytes, long contentLength, boolean done) {
+            if (uiDownloadProgressListener != null) {
+                uiDownloadProgressListener.onUIDownloadProgress(id, currentBytes, contentLength, done);
             }
         }
 
         @Override
-        public void finish(UIProgressListener uiProgressListener, long currentBytes, long contentLength, boolean done) {
-            if (uiProgressListener != null) {
-                uiProgressListener.onUIFinish(id, currentBytes, contentLength, done);
+        public void downloadFinish(UIDownloadProgressListener uiDownloadProgressListener, long currentBytes, long contentLength, boolean done) {
+            if (uiDownloadProgressListener != null) {
+                uiDownloadProgressListener.onUIDownloadFinish(id, currentBytes, contentLength, done);
             }
         }
     }
 
     @Override
-    public void onProgress(long bytesWrite, long contentLength, boolean done) {
-        if (isCancled()) {
+    public void onDownloadProgress(long bytesWrite, long contentLength, boolean done) {
+        if (isDownloadCancled()) {
             return;
         }
         //如果是第一次，发送消息
@@ -104,12 +103,12 @@ public abstract class UIProgressListener implements ProgressListener {
     }
 
     @Override
-    public boolean isCancled() {
+    public boolean isDownloadCancled() {
         return isCancled;
     }
 
     @Override
-    public void setCancled() {
+    public void setDownloadCancled() {
         isCancled = true;
     }
 
@@ -120,7 +119,7 @@ public abstract class UIProgressListener implements ProgressListener {
      * @param contentLength 总字节长度
      * @param done          是否写入完成
      */
-    public abstract void onUIProgress(int taskId, long currentBytes, long contentLength, boolean done);
+    public abstract void onUIDownloadProgress(int taskId, long currentBytes, long contentLength, boolean done);
 
     /**
      * UI层开始请求回调方法
@@ -129,7 +128,7 @@ public abstract class UIProgressListener implements ProgressListener {
      * @param contentLength 总字节长度
      * @param done          是否写入完成
      */
-    public void onUIStart(int taskId, long currentBytes, long contentLength, boolean done) {
+    public void onUIDownloadStart(int taskId, long currentBytes, long contentLength, boolean done) {
 
     }
 
@@ -140,7 +139,7 @@ public abstract class UIProgressListener implements ProgressListener {
      * @param contentLength 总字节长度
      * @param done          是否写入完成
      */
-    public void onUIFinish(int taskId, long currentBytes, long contentLength, boolean done) {
+    public void onUIDownloadFinish(int taskId, long currentBytes, long contentLength, boolean done) {
 
     }
 }

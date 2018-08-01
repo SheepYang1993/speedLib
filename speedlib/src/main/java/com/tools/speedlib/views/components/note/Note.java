@@ -52,8 +52,8 @@ public abstract class Note<N extends Note> {
     /**
      *  draw inside note's dialog.
      * @param canvas canvas to draw.
-     * @param leftX left x position to start drawing.
-     * @param topY top y position to start drawing.
+     * @param leftX left x position to downloadStart drawing.
+     * @param topY top y position to downloadStart drawing.
      */
     protected abstract void drawContains(Canvas canvas, float leftX, float topY);
 
