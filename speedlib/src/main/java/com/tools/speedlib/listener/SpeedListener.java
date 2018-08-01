@@ -5,6 +5,10 @@ package com.tools.speedlib.listener;
  * Created by wong on 17-3-27.
  */
 public interface SpeedListener {
+    void onStart();
+
+    void onFinish(long finalDownSpeed, long finalUpSpeed);
+
     void onDownloadSpeeding(long downSpeed, long upSpeed);
 
     void onDownloadSpeedFinish(long finalDownSpeed, long finalUpSpeed);

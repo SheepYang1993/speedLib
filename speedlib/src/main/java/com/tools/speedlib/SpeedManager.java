@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.CacheControl;
@@ -35,15 +36,16 @@ import okhttp3.Response;
  * Created by wong on 17-3-27.
  */
 public class SpeedManager {
-    public static final int MODE_FAKE_UPLOAD = 0;
-    public static final int MODE_REAL_UPLOAD = 1;
+    public static final int MODE_FAKE_UPLOAD = 1;
+    public static final int MODE_REAL_UPLOAD = 2;
+    private int mode = MODE_FAKE_UPLOAD;
     private static final int MSG_TIMEOUT = 1000;
     private OkHttpClient client;
     private Call downloadCall;
     private String pingCmd; //网络延时的指令
     private String downloadUrl; //下载网络测速的地址
     private String uploadUrl; //上传网络测速的地址
-    private int maxCount; //测速的时间总数
+    private int downloadMaxCount; //测速的时间总数
     private long timeOut; //超时时间
     private File downFile;//下载文件地址
     private NetDelayListener delayListener; //网络延时回调
@@ -51,30 +53,61 @@ public class SpeedManager {
 
     private SparseArray<Long> mTotalSpeeds = new SparseArray<>(); //保存每秒的速度
     private long mTempSpeed = 0L; //每秒的速度
-    private int mSpeedCount = 0; //文件下载进度的回调次数
-    private boolean mIsStopDownloadSpeed = false; //是否结束测速
+    private int mDownloadSpeedCount = 0; //文件下载进度的回调次数
+    private boolean mIsDownloadSpeedFinish = false; //下载测速是否结束
+    private boolean mIsUploadSpeedFinish = false; //上传测速是否结束
 
-    private Handler mHandler = new Handler() {
+
+    private Handler mHandler = new MyHandler(this);
+    private long mFinalDownloadSpeed = -1;
+    private long mFinalUploadSpeed = -1;
+
+    private static class MyHandler extends Handler {
+        private final WeakReference<SpeedManager> speedManagerWeakReference;
+
+        public MyHandler(SpeedManager speedManager) {
+            speedManagerWeakReference = new WeakReference<SpeedManager>(speedManager);
+        }
+
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            SpeedManager speedManager = this.speedManagerWeakReference.get();
+            if (speedManager == null) {
+                return;
+            }
             switch (msg.what) {
                 case MSG_TIMEOUT:
-                    if (!mIsStopDownloadSpeed) {
-//                        Log.i("SheepYang", "handleResultSpeed MSG_TIMEOUT");
-                        mIsUploadDone = true;
-                        Log.i("SheepYang", "MSG_TIMEOUT");
-                        handleResultSpeed(0L, true);
+                    Log.i("SheepYang", "MSG_TIMEOUT");
+                    if (speedManager.speedListener != null) {
+                        switch (speedManager.mode) {
+                            case MODE_FAKE_UPLOAD:
+                                break;
+                            case MODE_REAL_UPLOAD:
+                                break;
+                            default:
+                                break;
+                        }
+                        if (!speedManager.mIsDownloadSpeedFinish) {
+                            speedManager.mFinalDownloadSpeed = speedManager.mCurrentDownloadBytes;
+                            speedManager.speedListener.onDownloadSpeedFinish(speedManager.mCurrentDownloadBytes, 0L);
+                        }
+                        if (!speedManager.mIsUploadSpeedFinish) {
+                            speedManager.mFinalUploadSpeed = 0L;
+                            speedManager.speedListener.onUploadSpeedFinish(0L);
+                        }
                     }
+                    speedManager.finishSpeed();
                     break;
                 default:
                     break;
             }
         }
-    };
+    }
+
     private Call uploadCall;
     private boolean mIsUploadDone = true;
-    private long mCurrentBytes;
+    private long mCurrentDownloadBytes;
     private long mUploadTime;
 
     private SpeedManager() {
@@ -90,9 +123,8 @@ public class SpeedManager {
      */
     public void startSpeed() {
         mUploadTime = -1;
-        mSpeedCount = 0;
+        mDownloadSpeedCount = 0;
         mTempSpeed = 0;
-        mIsStopDownloadSpeed = false;
         mTotalSpeeds = new SparseArray<>();
         boolean isPingSucc = pingDelay(this.pingCmd);
         if (isPingSucc && null != speedListener) {
@@ -102,25 +134,44 @@ public class SpeedManager {
 
     /**
      * 测速结束
+     *
+     * @param isPush 是否通知测速结束
      */
-    public void finishSpeed() {
+    public void finishSpeed(boolean isPush) {
         finishDownloadSpeed();
         finishUploadSpeed();
         TimerTaskUtil.cacleTimer(mHandler, MSG_TIMEOUT);
+        if (speedListener != null && isPush) {
+            speedListener.onFinish(mFinalDownloadSpeed, mFinalUploadSpeed);
+        }
+    }
+
+    /**
+     * 测速结束
+     */
+    public void finishSpeed() {
+        finishSpeed(true);
     }
 
     private void finishUploadSpeed() {
+        if (mIsUploadSpeedFinish) {
+            return;
+        }
         if (uploadCall != null) {
             uploadCall.cancel();
         }
+        mIsUploadSpeedFinish = true;
         mIsUploadDone = true;
     }
 
     private void finishDownloadSpeed() {
+        if (mIsDownloadSpeedFinish) {
+            return;
+        }
         if (downloadCall != null) {
             downloadCall.cancel();
         }
-        mIsStopDownloadSpeed = true;
+        mIsDownloadSpeedFinish = true;
     }
 
     /**
@@ -128,12 +179,17 @@ public class SpeedManager {
      * 下载速度和上传速度
      */
     private void speed() {
-        finishSpeed();
+        if (speedListener != null) {
+            speedListener.onStart();
+        }
+        finishSpeed(false);
+        mIsDownloadSpeedFinish = false;
+        mIsUploadSpeedFinish = false;
         TimerTaskUtil.setTimer(mHandler, MSG_TIMEOUT, timeOut);
         UIDownloadProgressListener uiDownloadProgressListener = new UIDownloadProgressListener() {
             @Override
             public void onUIDownloadProgress(int taskId, long currentBytes, long contentLength, boolean done) {
-                handleSpeed(currentBytes, done);
+                handleDownloadSpeed(currentBytes, done);
             }
 
             @Override
@@ -144,9 +200,9 @@ public class SpeedManager {
             @Override
             public void onUIDownloadFinish(int taskId, long currentBytes, long contentLength, boolean done) {
                 super.onUIDownloadFinish(taskId, currentBytes, contentLength, done);
-//                Log.i("SheepYang", "handleResultSpeed onUIDownloadFinish");
+//                Log.i("SheepYang", "handleDownloadResultSpeed onUIDownloadFinish");
                 Log.i("SheepYang", "onUIDownloadFinish");
-                handleResultSpeed(currentBytes, done);
+                handleDownloadResultSpeed(currentBytes, done);
             }
         };
         Request request = new Request.Builder()
@@ -173,7 +229,7 @@ public class SpeedManager {
         int len;
         int size = 1024;
         byte[] buf = new byte[size];
-        while (!mIsStopDownloadSpeed && (len = is.read(buf, 0, size)) != -1) {
+        while (!mIsDownloadSpeedFinish && (len = is.read(buf, 0, size)) != -1) {
             Log.d("TAG", "byte length : " + len);
         }
     }
@@ -277,31 +333,30 @@ public class SpeedManager {
      * @param currentBytes
      * @param done
      */
-    private void handleSpeed(long currentBytes, boolean done) {
-//        Log.i("SheepYang", String.format("handleSpeed currentBytes:%d, done:%b", currentBytes, done));
-        if (mSpeedCount < maxCount) {
-            mTempSpeed = currentBytes / (mSpeedCount + 1);
-            mTotalSpeeds.put(mSpeedCount, mTempSpeed);
-            mSpeedCount++;
+    private void handleDownloadSpeed(long currentBytes, boolean done) {
+        if (mDownloadSpeedCount < downloadMaxCount) {
+            mTempSpeed = currentBytes / (mDownloadSpeedCount + 1);
+            mTotalSpeeds.put(mDownloadSpeedCount, mTempSpeed);
+            mDownloadSpeedCount++;
             //回调每秒的速度
             if (null != speedListener) {
-                long uploadSpeed;
-                if (isNeedUpload()) {
-                    if (mUploadTime != -1) {
-                        uploadSpeed = mUploadTime;
-                    } else {
-                        uploadSpeed = 0;
-                    }
-                } else {
-                    uploadSpeed = mTempSpeed / 4;
+                long uploadSpeed = -1;
+                switch (mode) {
+                    case MODE_FAKE_UPLOAD:
+                        uploadSpeed = mTempSpeed / 4;
+                        break;
+                    case MODE_REAL_UPLOAD:
+                        uploadSpeed = -1;
+                        break;
+                    default:
+                        break;
                 }
-                Log.i("SheepYang", "Listener.onDownloadSpeeding");
+                Log.i("SheepYang", "onDownloadSpeeding => downloadSpeed:" + mTempSpeed + ", uploadSpeed:" + uploadSpeed);
                 speedListener.onDownloadSpeeding(mTempSpeed, uploadSpeed);
             }
         }
-//        Log.i("SheepYang", String.format("handleResultSpeed handleSpeed ,mSpeedCount >= maxCount:%b, done:%b", mSpeedCount >= maxCount, done));
-        Log.i("SheepYang", "handleSpeed");
-        handleResultSpeed(currentBytes, mSpeedCount >= maxCount || done);
+        Log.i("SheepYang", "handleDownloadSpeed");
+        handleDownloadResultSpeed(currentBytes, mDownloadSpeedCount >= downloadMaxCount || done);
     }
 
     /**
@@ -310,73 +365,54 @@ public class SpeedManager {
      * @param isDownloadDone
      * @param currentBytes
      */
-    private void handleResultSpeed(long currentBytes, boolean isDownloadDone) {
-        Log.i("SheepYang", "handleResultSpeed => currentBytes:" + currentBytes + ", isDownloadDone:" + isDownloadDone);
-        if (isDownloadDone) {
-            mCurrentBytes = currentBytes;
-            if (!isNeedUpload()) {
-                finishSpeed();
-                //回调最终的速度
-                long finalSpeedTotal = 0L;
-                for (int i = 0; i < mTotalSpeeds.size(); i++) {
-                    finalSpeedTotal += mTotalSpeeds.get(i);
-                }
-                if (null != speedListener) {
-                    if (mTotalSpeeds.size() > 0) {
-                        Log.i("SheepYang", "Listener.onDownloadSpeedFinish 1");
-                        speedListener.onDownloadSpeedFinish(finalSpeedTotal / mTotalSpeeds.size(), finalSpeedTotal / mTotalSpeeds.size() / 4);
-                    } else if (0 != currentBytes) {
-                        //文件较小时可能出现
-                        Log.i("SheepYang", "Listener.onDownloadSpeedFinish 2");
-                        speedListener.onDownloadSpeedFinish(currentBytes, currentBytes / 4);
-                    } else {
-                        //超时
-                        Log.i("SheepYang", "Listener.onDownloadSpeedFinish 3");
-                        speedListener.onDownloadSpeedFinish(0L, 0L);
-                    }
-                    speedListener = null;
-                    TimerTaskUtil.cacleTimer(mHandler, MSG_TIMEOUT);
-                }
-            } else {
-                finishDownloadSpeed();
-                if (mUploadTime == -1) {
-                    uploadFile();
-                } else {
-                    finishSpeed();
-                    //回调最终的速度
-                    long finalSpeedTotal = 0L;
-                    for (int i = 0; i < mTotalSpeeds.size(); i++) {
-                        finalSpeedTotal += mTotalSpeeds.get(i);
-                    }
-                    if (null != speedListener) {
-                        long length = downFile.length();
-                        long time = (mUploadTime / 1000000000) <= 0 ? 1 : (mUploadTime / 1000000000);
-                        long uploadSpeed = mUploadTime > 0 ? length / time : 0L;
-                        if (mTotalSpeeds.size() > 0) {
-                            Log.i("SheepYang", "Listener.onDownloadSpeedFinish 4");
-                            speedListener.onDownloadSpeedFinish(finalSpeedTotal / mTotalSpeeds.size(), uploadSpeed);
-                        } else if (0 != currentBytes) {
-                            //文件较小时可能出现
-                            Log.i("SheepYang", "Listener.onDownloadSpeedFinish 5");
-                            speedListener.onDownloadSpeedFinish(currentBytes, uploadSpeed);
-                        } else {
-                            //超时
-                            Log.i("SheepYang", "Listener.onDownloadSpeedFinish 6");
-                            speedListener.onDownloadSpeedFinish(0L, 0L);
-                        }
-                        speedListener = null;
-                        TimerTaskUtil.cacleTimer(mHandler, MSG_TIMEOUT);
-                    }
-                }
+    private void handleDownloadResultSpeed(long currentBytes, boolean isDownloadDone) {
+        Log.i("SheepYang", "aa handleDownloadResultSpeed => currentBytes:" + currentBytes + ", isDownloadDone:" + isDownloadDone + ", mIsDownloadSpeedFinish:" + mIsDownloadSpeedFinish);
+        if (!mIsDownloadSpeedFinish && isDownloadDone) {
+            mCurrentDownloadBytes = currentBytes;
+            finishDownloadSpeed();
+            //回调最终的速度
+            long finalSpeedTotal = 0L;
+            for (int i = 0; i < mTotalSpeeds.size(); i++) {
+                finalSpeedTotal += mTotalSpeeds.get(i);
             }
-        }
-    }
+            long finalDownloadSpeed, finalUploadSpeed;
+            if (mTotalSpeeds.size() > 0) {
+                Log.i("SheepYang", "handleDownloadResultSpeed => TotalSpeeds.size() > 0aaa");
+                finalDownloadSpeed = finalSpeedTotal / mTotalSpeeds.size();
+                finalUploadSpeed = finalSpeedTotal / mTotalSpeeds.size() / 4;
+            } else if (0 != currentBytes) {
+                //文件较小时可能出现
+                Log.i("SheepYang", "handleDownloadResultSpeed => 文件较小时可能出现");
+                finalDownloadSpeed = currentBytes;
+                finalUploadSpeed = currentBytes / 4;
+            } else {
+                //超时
+                Log.i("SheepYang", "handleDownloadResultSpeed => 超时");
+                finalDownloadSpeed = 0L;
+                finalUploadSpeed = 0L;
+            }
 
-    private boolean isNeedUpload() {
-        if (TextUtils.isEmpty(this.uploadUrl)) {
-            return false;
-        } else {
-            return true;
+            switch (mode) {
+                case MODE_FAKE_UPLOAD:
+                    if (null != speedListener) {
+                        mFinalDownloadSpeed = finalDownloadSpeed;
+                        mFinalUploadSpeed = finalUploadSpeed;
+                        speedListener.onDownloadSpeedFinish(finalDownloadSpeed, finalUploadSpeed);
+                        speedListener.onUploadSpeedFinish(finalUploadSpeed);
+                        finishSpeed();
+                    }
+                    break;
+                case MODE_REAL_UPLOAD:
+                    if (null != speedListener) {
+                        mFinalDownloadSpeed = finalDownloadSpeed;
+                        speedListener.onDownloadSpeedFinish(finalDownloadSpeed, -1);
+                    }
+                    finishDownloadSpeed();
+                    uploadFile();
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -389,10 +425,14 @@ public class SpeedManager {
             mIsUploadDone = true;
             mUploadTime = 0;
             Log.i("SheepYang", "uploadFile downFile == null");
-            handleResultSpeed(mCurrentBytes, true);
+            if (speedListener != null) {
+                mFinalUploadSpeed = 0L;
+                speedListener.onUploadSpeedFinish(0L);
+                finishSpeed();
+            }
             return;
         }
-//        Log.i("SheepYang", "uploadFile");
+        Log.i("SheepYang", "uploadFile");
         OkHttpClient client = new OkHttpClient();
         // form 表单形式上传
         MultipartBody.Builder requestBody = new MultipartBody.Builder().setType(MultipartBody.FORM);
@@ -416,23 +456,38 @@ public class SpeedManager {
         uploadCall.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                mIsUploadDone = true;
                 mUploadTime = 0;
-//                Log.i("SheepYang", "upload onFailure");
+                Log.i("SheepYang", "upload onFailure");
+                if (speedListener != null) {
+                    mFinalUploadSpeed = 0L;
+                    speedListener.onUploadSpeedFinish(0L);
+                    finishSpeed();
+                }
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                mIsUploadDone = true;
                 if (response.isSuccessful()) {
                     String str = response.body().string();
                     mUploadTime = System.nanoTime() - tempTime;
                     Log.i("SheepYang", "uploadFile onResponse isSuccessful");
-                    handleResultSpeed(mCurrentBytes, true);
-//                    Log.i("SheepYang", "upload onResponse message:" + response.message() + " , body " + str);
+
+
+                    long length = downFile.length();
+                    long time = (mUploadTime / 1000000000) <= 0 ? 1 : (mUploadTime / 1000000000);
+                    long uploadSpeed = mUploadTime > 0 ? length / time : 0L;
+                    if (speedListener != null) {
+                        mFinalUploadSpeed = uploadSpeed;
+                        speedListener.onUploadSpeedFinish(uploadSpeed);
+                        finishSpeed();
+                    }
                 } else {
                     Log.i("SheepYang", "uploadFile onResponse not isSuccessful");
-//                    Log.i("SheepYang", response.message() + "upload onResponse error : body " + response.body().string());
+                    if (speedListener != null) {
+                        mFinalUploadSpeed = 0L;
+                        speedListener.onUploadSpeedFinish(0L);
+                        finishSpeed();
+                    }
                 }
             }
         });
@@ -523,8 +578,11 @@ public class SpeedManager {
             if (!TextUtils.isEmpty(this.uploadUrl)) {
                 manager.uploadUrl = this.uploadUrl;
             }
+            if (0 != this.mode) {
+                manager.mode = this.mode;
+            }
             if (0 != this.maxCount) {
-                manager.maxCount = this.maxCount;
+                manager.downloadMaxCount = this.maxCount;
             }
             if (0L != this.timeOut) {
                 manager.timeOut = this.timeOut;
