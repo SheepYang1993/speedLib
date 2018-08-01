@@ -14,6 +14,7 @@ import com.tools.speedlib.listener.NetDelayListener;
 import com.tools.speedlib.listener.SpeedListener;
 import com.tools.speedlib.utils.ConverUtil;
 import com.tools.speedlib.utils.FileUtil;
+import com.tools.speedlib.views.NiceSpeedView;
 import com.tools.speedlib.views.PointerSpeedView;
 
 
@@ -22,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String EXTRA_DOWNSPEED = "downSpeed";
     private static final String EXTRA_DOWNRESULT = "downResult";
 
-    private PointerSpeedView speedometer;
+    private NiceSpeedView speedometer;
     private TextView tx_delay;
     private TextView tx_down;
     private TextView tx_up;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        speedometer = (PointerSpeedView) findViewById(R.id.speedometer);
+        speedometer = (NiceSpeedView) findViewById(R.id.speedometer);
         tx_delay = (TextView) findViewById(R.id.tx_delay);
         tx_down = (TextView) findViewById(R.id.tx_down);
         tx_up = (TextView) findViewById(R.id.tx_up);
