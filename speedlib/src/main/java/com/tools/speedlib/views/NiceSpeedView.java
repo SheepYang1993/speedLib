@@ -70,7 +70,7 @@ public class NiceSpeedView extends Speedometer {
         //设置指针样式
         speedometerDefault.indicator = new ImageIndicator(getContext(), R.drawable.icon_speed_pointer);
         //设置背景颜色
-        speedometerDefault.backgroundCircleColor = getResources().getColor(R.color.C04_ST);
+        speedometerDefault.backgroundCircleColor = getResources().getColor(R.color.gray_6e);
         //设置指示条宽度
         speedometerDefault.speedometerWidth = dpTOpx(1f);
         speedometerDefault.highSpeedColor = getResources().getColor(R.color.C01_ST);
@@ -145,7 +145,7 @@ public class NiceSpeedView extends Speedometer {
     }
 
     private void initDraw() {
-        speedometer2Paint.setColor(getResources().getColor(R.color.C04_ST));
+        speedometer2Paint.setColor(getResources().getColor(R.color.gray_6e));
         speedometer2Paint.setStrokeWidth(getSpeedometerWidth());
         speedometerPaint.setStrokeWidth(getSpeedometerWidth());
         speedometerPaint.setColor(getResources().getColor(R.color.C01_ST));
