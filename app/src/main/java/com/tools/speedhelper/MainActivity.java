@@ -96,17 +96,17 @@ public class MainActivity extends AppCompatActivity {
                 .setSpeedListener(new SpeedListener() {
                     @Override
                     public void onStart() {
-                        Log.i("SheepYang", "开始测速");
+//                        Log.i("SheepYang", "开始测速");
                     }
 
                     @Override
                     public void onFinish(long finalDownSpeed, long finalUpSpeed) {
-                        Log.i("SheepYang", "测速完成");
+//                        Log.i("SheepYang", "测速完成");
                     }
 
                     @Override
                     public void onDownloadSpeeding(long downSpeed, long upSpeed) {
-                        Log.i("SheepYang", "正在下载，下载速度:" + downSpeed);
+//                        Log.i("SheepYang", "正在下载，下载速度:" + downSpeed);
                         String[] downResult = ConverUtil.fomartSpeed(downSpeed);
                         String[] upResult = null;
                         if (upSpeed != -1) {
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onDownloadSpeedFinish(long finalDownSpeed, long finalUpSpeed) {
-                        Log.i("SheepYang", "下载结束，下载速度:" + finalDownSpeed);
+//                        Log.i("SheepYang", "下载结束，下载速度:" + finalDownSpeed);
                         String[] downResult = ConverUtil.fomartSpeed(finalDownSpeed);
                         String[] upResult = null;
                         if (finalUpSpeed != -1) {
@@ -156,12 +156,12 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onUploadSpeeding(long upSpeed) {
-                        Log.i("SheepYang", "正在上传，上传速度:" + upSpeed);
+//                        Log.i("SheepYang", "正在上传，上传速度:" + upSpeed);
                     }
 
                     @Override
                     public void onUploadSpeedFinish(long finalUpSpeed) {
-                        Log.i("SheepYang", "上传结束，上传速度:" + finalUpSpeed);
+//                        Log.i("SheepYang", "上传结束，上传速度:" + finalUpSpeed);
                     }
                 })
                 .setPindCmd("59.61.92.196")
